@@ -7,7 +7,6 @@ from tempfile import mkdtemp
 
 import numpy as np
 
-from keras import __version__ as KERAS_VERSION
 from keras.callbacks import Callback as KerasCallback, CallbackList as KerasCallbackList
 from keras.utils.generic_utils import Progbar
 
@@ -118,7 +117,7 @@ class TrainEpisodeLogger(Callback):
         self.train_start = timeit.default_timer()
         self.metrics_names = self.model.metrics_names
         print('Training for {} steps ...'.format(self.params['nb_steps']))
-        
+
     def on_train_end(self, logs):
         duration = timeit.default_timer() - self.train_start
         print('done, took {:.3f} seconds'.format(duration))
@@ -149,7 +148,7 @@ class TrainEpisodeLogger(Callback):
                 except Warning:
                     value = '--'
                     metrics_template += '{}: {}'
-                metrics_variables += [name, value]          
+                metrics_variables += [name, value]
         metrics_text = metrics_template.format(*metrics_variables)
 
         nb_step_digits = str(int(np.ceil(np.log10(self.params['nb_steps']))) + 1)
@@ -225,7 +224,7 @@ class TrainIntervalLogger(Callback):
                     assert means.shape == (len(self.metrics_names),)
                     for name, mean in zip(self.metrics_names, means):
                         formatted_metrics += ' - {}: {:.3f}'.format(name, mean)
-                
+
                 formatted_infos = ''
                 if len(self.infos) > 0:
                     infos = np.array(self.infos)
@@ -243,10 +242,7 @@ class TrainIntervalLogger(Callback):
         if self.info_names is None:
             self.info_names = logs['info'].keys()
         values = [('reward', logs['reward'])]
-        if KERAS_VERSION > '2.1.3':
-            self.progbar.update((self.step % self.interval) + 1, values=values)
-        else:
-            self.progbar.update((self.step % self.interval) + 1, values=values, force=True)
+        self.progbar.update((self.step % self.interval) + 1, values=values)
         self.step += 1
         self.metrics.append(logs['metrics'])
         if len(self.info_names) > 0:
@@ -281,7 +277,7 @@ class FileLogger(Callback):
 
     def on_episode_end(self, episode, logs):
         duration = timeit.default_timer() - self.starts[episode]
-        
+
         metrics = self.metrics[episode]
         if np.isnan(metrics).all():
             mean_metrics = np.array([np.nan for _ in self.metrics_names])

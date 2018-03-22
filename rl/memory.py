@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from collections import deque, namedtuple
 import warnings
 import random
+import copy
 
 import numpy as np
 
@@ -115,7 +116,7 @@ class Memory(object):
 class SequentialMemory(Memory):
     def __init__(self, limit, **kwargs):
         super(SequentialMemory, self).__init__(**kwargs)
-        
+
         self.limit = limit
 
         # Do not use deque to implement the memory. This data structure may seem convenient but
@@ -177,7 +178,7 @@ class SequentialMemory(Memory):
             # Okay, now we need to create the follow-up state. This is state0 shifted on timestep
             # to the right. Again, we need to be careful to not include an observation from the next
             # episode if the last state is terminal.
-            state1 = [np.copy(x) for x in state0[1:]]
+            state1 = [copy.copy(x) for x in state0[1:]]
             state1.append(self.observations[idx])
 
             assert len(state0) == self.window_length
@@ -189,7 +190,7 @@ class SequentialMemory(Memory):
 
     def append(self, observation, action, reward, terminal, training=True):
         super(SequentialMemory, self).append(observation, action, reward, terminal, training=training)
-        
+
         # This needs to be understood as follows: in `observation`, take `action`, obtain `reward`
         # and weather the next state is `terminal` or not.
         if training:

@@ -29,7 +29,6 @@ class LinearAnnealedPolicy(Policy):
             raise ValueError('Policy "{}" does not have attribute "{}".'.format(attr))
 
         super(LinearAnnealedPolicy, self).__init__()
-
         self.inner_policy = inner_policy
         self.attr = attr
         self.value_max = value_max
@@ -90,6 +89,25 @@ class EpsGreedyQPolicy(Policy):
         config['eps'] = self.eps
         return config
 
+class EpsGreedyMQPolicy(Policy):
+    def __init__(self, eps=.1):
+        super(EpsGreedyMQPolicy, self).__init__()
+        self.eps = eps
+
+    def select_action(self, q_values):
+        actions = []
+        for stream_q_values in q_values:
+            if np.random.uniform() < self.eps:
+                action = np.random.random_integers(0, len(stream_q_values[0])-1)
+            else:
+                action = np.argmax(stream_q_values[0])
+            actions.append(action)
+        return actions
+
+    def get_config(self):
+        config = super(EpsGreedyQPolicy, self).get_config()
+        config['eps'] = self.eps
+        return config
 
 class GreedyQPolicy(Policy):
     def select_action(self, q_values):
@@ -97,6 +115,13 @@ class GreedyQPolicy(Policy):
         action = np.argmax(q_values)
         return action
 
+class GreedyMQPolicy(Policy):
+    def select_action(self, q_values):
+        actions = []
+        for stream_q_values in q_values:
+            action = np.argmax(stream_q_values)
+            actions.append(action)
+        return actions
 
 class BoltzmannQPolicy(Policy):
     def __init__(self, tau=1., clip=(-500., 500.)):

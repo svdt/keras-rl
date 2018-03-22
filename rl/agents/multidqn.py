@@ -180,7 +180,7 @@ class MDQNAgent(AbstractDQNAgent):
             model = Model(inputs=inp, outputs=layer.output)
             out = model.predict(np.array([img[idx][0]]))
             for i,fil in enumerate(np.transpose(out[0])):
-                Image.fromarray(255*fil).convert('L').save("conv-inp"+str(idx)+"/filter"+str(i)+".png")
+                Image.fromarray(255*fil).convert('L').save("conv-check/conv-inp"+str(idx)+"/filter"+str(i)+".png")
 
     def get_config(self):
         config = super(DQNAgent, self).get_config()
