@@ -25,22 +25,22 @@ class CEMAgent(Agent):
         self.nb_steps_warmup = nb_steps_warmup
         self.train_interval = train_interval
         self.memory_interval = memory_interval
-        
+
         # if using noisy CEM, the minimum standard deviation will be ampl * exp (- decay_const * step )
         self.noise_decay_const = noise_decay_const
         self.noise_ampl = noise_ampl
-                
+
         # default initial mean & cov, override this by passing an theta_init argument
         self.init_mean = 0.0
         self.init_stdev = 1.0
-        
+
         # Related objects.
         self.memory = memory
         self.model = model
         self.shapes = [w.shape for w in model.get_weights()]
         self.sizes = [w.size for w in model.get_weights()]
         self.num_weights = sum(self.sizes)
-        
+
         # store the best result seen during training, as a tuple (reward, flat_weights)
         self.best_seen = (-np.inf, np.zeros(self.num_weights))
 
@@ -70,7 +70,7 @@ class CEMAgent(Agent):
             weights_flat[pos:pos+size] = weights[i_layer].flatten()
             pos += size
         return weights_flat
-        
+
     def get_weights_list(self,weights_flat):
         weights = []
         pos = 0
@@ -78,7 +78,7 @@ class CEMAgent(Agent):
             arr = weights_flat[pos:pos+size].reshape(self.shapes[i_layer])
             weights.append(arr)
             pos += size
-        return weights          
+        return weights
 
     def reset_states(self):
         self.recent_observation = None
@@ -93,12 +93,12 @@ class CEMAgent(Agent):
         if stochastic or self.training:
             return np.random.choice(np.arange(self.nb_actions), p=np.exp(action) / np.sum(np.exp(action)))
         return np.argmax(action)
-    
+
     def update_theta(self,theta):
         if (theta is not None):
             assert theta.shape == self.theta.shape, "Invalid theta, shape is {0} but should be {1}".format(theta.shape,self.theta.shape)
             assert (not np.isnan(theta).any()), "Invalid theta, NaN encountered"
-            assert (theta[self.num_weights:] >= 0.).all(), "Invalid theta, standard deviations must be nonnegative"            
+            assert (theta[self.num_weights:] >= 0.).all(), "Invalid theta, standard deviations must be nonnegative"
             self.theta = theta
         else:
             means = np.ones(self.num_weights) * self.init_mean
@@ -117,8 +117,6 @@ class CEMAgent(Agent):
         # Select an action.
         state = self.memory.get_recent_state(observation)
         action = self.select_action(state)
-        if self.processor is not None:
-            action = self.processor.process_action(action)
 
         # Book-keeping.
         self.recent_observation = observation
@@ -129,7 +127,7 @@ class CEMAgent(Agent):
     @property
     def layers(self):
         return self.model.layers[:]
-         
+
     def backward(self, reward, terminal):
         # Store most recent experience in memory.
         if self.step % self.memory_interval == 0:
@@ -153,12 +151,12 @@ class CEMAgent(Agent):
 
                 if reward_totals[best_idx[-1]] > self.best_seen[0]:
                     self.best_seen = (reward_totals[best_idx[-1]], params[best_idx[-1]])
-                    
+
                 metrics = [np.mean(np.array(reward_totals)[best_idx])]
                 if self.processor is not None:
                     metrics += self.processor.metrics
                 min_std = self.noise_ampl * np.exp(-self.step * self.noise_decay_const)
-                
+
                 mean = np.mean(best, axis=0)
                 std = np.std(best, axis=0) + min_std
                 new_theta = np.hstack((mean, std))
